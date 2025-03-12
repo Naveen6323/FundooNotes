@@ -9,21 +9,28 @@ using System.Threading.Tasks;
 
 namespace DataAcessLayer.Entity
 {
-    public class User:IUser
+    public class User : IUser
     {
         [Key]
         public int ID { get; set; }
-        [Column("FirstName",TypeName = "varchar(100)")]
-        public string FirstName { get; set; }
+
+        [Column("FirstName", TypeName = "varchar(100)")]
+        public string? FirstName { get; set; }
+
         [Column("LastName", TypeName = "varchar(100)")]
-        public string LastName { get; set; }
+        public string? LastName { get; set; }
+
         [Required]
         [EmailAddress]
         [Column("Email", TypeName = "varchar(100)")]
+        [MaxLength(100)]
         public string Email { get; set; }
+
         [Required]
         [MinLength(8)]
         [Column("Password", TypeName = "varchar(100)")]
         public string Password { get; set; }
+
+        public virtual ICollection<UserNotes> Notes { get; set; } = new List<UserNotes>();
     }
 }

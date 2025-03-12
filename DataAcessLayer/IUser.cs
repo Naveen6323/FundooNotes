@@ -1,4 +1,5 @@
-﻿using System;
+﻿using DataAcessLayer.Entity;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -6,12 +7,13 @@ using System.Threading.Tasks;
 
 namespace DataAcessLayer
 {
-    interface IUser
+    public interface IUser
     {
-        public int ID { get; set; }
-        public string FirstName { get; set; }
-        public string LastName { get; set; }
-        public string Email { get; set; }
-        public string Password { get; set; }
+        int ID { get; set; }
+        string? FirstName { get; set; }
+        string? LastName { get; set; }
+        string Email { get; set; }
+        string Password { get; set; }
+        ICollection<UserNotes> Notes { get; set; }
     }
 }
