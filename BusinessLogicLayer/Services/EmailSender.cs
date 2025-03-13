@@ -19,6 +19,7 @@ namespace BusinessLogicLayer.Services
         public async Task SendEmailAsync(string to, string subject, string body)
         {
             var smtpSettings = _configuration.GetSection("SmtpSettings");
+            //var smtpPass = Environment.GetEnvironmentVariable("SMTP_PASS");
 
             using var client = new SmtpClient(smtpSettings["Host"], int.Parse(smtpSettings["Port"]))
             {
