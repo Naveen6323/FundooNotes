@@ -23,12 +23,12 @@ namespace FundooNotes.Controllers
             this.authenticate = authenticate;
         }
         [HttpPost]
-        public async Task<ActionResult> Post(RegisterResponse data)
+        public async Task<ActionResult> Post(RegisterModel data)
         {
             try
             {
                 await authenticate.Register(data);
-                return Ok("user registered succesfully");
+                return Ok(new { Message="user registered succesfully" });
 
             }
             catch (Exception e)
@@ -38,47 +38,60 @@ namespace FundooNotes.Controllers
         }
         [AllowAnonymous]
         [HttpPost("login")]
-        public async Task<ActionResult> Login(string email, string pass)
+        public async Task<ActionResult> Login(LoginReq req)
         {
             try
             {
-                var token=await authenticate.Login(email, pass);
+                var token=await authenticate.Login(req.email, req.password);
                 if (token == null)
                 {
-                    return Unauthorized("null");
+                    return Unauthorized(new { message = "null" });
                 }
-                return Ok(token);
+                return Ok(new {data=token});
             }
             catch (Exception e)
             {
-                return BadRequest(e.Message);
+                return BadRequest(new { message = e.Message });
             }
         }
-        [HttpPost("forgot-password")]
+        [HttpPost("forgotpassword")]
         public async Task<IActionResult> ForgotPassword(PasswordResetRequest data)
         {
             try
             {
                 await authenticate.ForgotPassword(data);
-                return Ok("Password reset link sent.");
+                return Ok(new { Message = "Password reset link sent." });
             }
             catch (Exception e)
             {
-                return BadRequest(e.Message);
+                return BadRequest(new { Message = e.Message });
             }
         }
 
-        [HttpPost("reset-password")]
-        public async Task<IActionResult> ResetPassword(string token, string pass, string confirmpass)
+        [HttpPost("resetpassword")]
+        [Authorize]
+        public async Task<IActionResult> ResetPassword(ResetPasswordModel data)
         {
             try
             {
-                await authenticate.ResetPassword(token, pass, confirmpass);
-                return Ok("Password reset successful.");
+                if (data.password != data.confirmpassword)
+                {
+                    throw new ArgumentException("Password and Confirm Password should be the same.");
+                }
+                var authHeader = HttpContext.Request.Headers["Authorization"].ToString();
+                if (string.IsNullOrEmpty(authHeader) || !authHeader.StartsWith("Bearer "))
+                {
+                    return BadRequest("Authorization token is missing or invalid.");
+                }
+
+                // Extract token (after "Bearer ")
+                var token = authHeader.Split(" ")[1];
+                await authenticate.ResetPassword(token,data.password, data.confirmpassword);
+                return Ok(new { Message = "Password reset successful." });
             }
             catch (Exception e)
             {
-                return BadRequest(e.Message);
+                return BadRequest(new { message = e.Message });
             }
         }
 

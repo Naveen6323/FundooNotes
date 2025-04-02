@@ -6,11 +6,9 @@ using System.Threading.Tasks;
 
 namespace ModelLayer.DTO
 {
-    public class GetAllNotesWithLabelResponse
+    public class LoginReq
     {
-        public int notetitle { get; set; }
-        public List<string> labelIds { get; set; }
-        
-
+        public string email { get;  set; }
+        public string password { get; set; }
     }
 }

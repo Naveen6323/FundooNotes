@@ -8,7 +8,9 @@ namespace ModelLayer.DTO
 {
     public class NotesWithLabelNameModel
     {
-        public string labelname { get; set; }
         public int noteid { get; set; }
+        public string title { get; set; }
+        public string description { get; set; }
+        public List<string> labelname { get; set; }
     }
 }

@@ -8,7 +8,7 @@ namespace ModelLayer.DTO
 {
     public class ResetPasswordModel
     {
-        public string Token { get; set; }
-        public string NewPassword { get; set; }
+        public string password { get; set; }
+        public string confirmpassword { get; set; }
     }
 }

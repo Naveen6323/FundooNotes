@@ -1,5 +1,6 @@
 ﻿using DataAcessLayer.Context;
 using DataAcessLayer.Entity;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
@@ -23,14 +24,14 @@ namespace BusinessLogicLayer.Services
             this.configuration = configuration;
             this.emailSender = emailSender;
         }
-        public async Task<LoginResponseModel> Login(string email, string pass)
+        public async Task<LoginResponseModel> Login(string email, string password)
         {
             var existingUser = await user.Users.FirstOrDefaultAsync(u => u.Email == email);
             if (existingUser == null)
             {
                 throw new Exception("user not found");
             }
-            bool isValid = BCrypt.Net.BCrypt.Verify(pass, existingUser.Password);
+            bool isValid = BCrypt.Net.BCrypt.Verify(password, existingUser.Password);
             if (isValid == false)
             {
                 throw new Exception("invalid password");
@@ -64,7 +65,7 @@ namespace BusinessLogicLayer.Services
             };
 
         }
-        public async Task Register(RegisterResponse data)
+        public async Task Register(RegisterModel data)
         {
             var existingUser = user.Users.Any(u => u.Email == data.email);
             
@@ -72,13 +73,13 @@ namespace BusinessLogicLayer.Services
             {
                 throw new Exception("email already exists");
             }
-            data.pass = BCrypt.Net.BCrypt.HashPassword(data.pass);
+            data.password = BCrypt.Net.BCrypt.HashPassword(data.password);
             var reg = new User
             {
                 FirstName = data.firstname,
-                LastName = data.last,
+                LastName = data.lastname,
                 Email = data.email,
-                Password = data.pass
+                Password = data.password
             };
             await user.Users.AddAsync(reg);
             await user.SaveChangesAsync();
@@ -98,71 +99,29 @@ namespace BusinessLogicLayer.Services
             var key = Encoding.ASCII.GetBytes(configuration["JwtConfig:ResetKey"]);
             var tokenDescriptor = new SecurityTokenDescriptor
             {
-                Subject = new ClaimsIdentity(new[] { new Claim(ClaimTypes.Email, existingUser.Email) ,
-                                                     new Claim(ClaimTypes.NameIdentifier, existingUser.ID.ToString()) 
+                Subject = new ClaimsIdentity(new[] { new Claim(ClaimTypes.NameIdentifier, existingUser.ID.ToString()) 
                 }),
                 
                 Expires = DateTime.UtcNow.AddMinutes(tokenvalidity),
                 Issuer=issuer,
                 Audience=audience,
-                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
+                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha512Signature)
             };
             var token = tokenHandler.CreateToken(tokenDescriptor);
             var resetToken = tokenHandler.WriteToken(token);
 
-            var resetLink = $"token={resetToken}";
-            //var resetLink = $"http://localhost:5256/api/users/reset-password?email=naveenveerabattini%40gmail.com&token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6Im5hdmVlbn";
+            //var resetLink = $"token={resetToken}";
+            var resetLink = $"http://localhost:4200/reset?token={resetToken}";
 
 
             string emailBody = $"<p>Click <a href='{resetLink}'>here</a> to reset your password. This link is valid for 30 minutes.</p>";
 
             await emailSender.SendEmailAsync(data.Email, "Password Reset", resetLink);
         }
+        public async Task ResetPassword(string token,string pass, string confirmpass)
+        { 
 
-        public async Task ResetPassword(string token, string pass, string confirmpass)
-        {
-            //    if (pass != confirmpass) throw new Exception("pass and confirmpass shuld be same");
-            //    var handler = new JwtSecurityTokenHandler();
-            //    var jwtToken = handler.ReadJwtToken(token);
-            //    var email = jwtToken.Claims.First(claim => claim.Type == ClaimTypes.Email).Value;
-            //    var existingUser = await user.Users.FirstOrDefaultAsync(u => u.Email == email);
-            //    if (existingUser == null)
-            //    {
-            //        throw new Exception("User not found");
-            //    }
-
-            //    var key = Encoding.ASCII.GetBytes(configuration["JwtConfig:ResetKey"]);
-
-            //    try
-            //    {
-            //        handler.ValidateToken(token, new TokenValidationParameters
-            //        {
-            //            ValidateIssuer = false,
-            //            ValidateAudience = false,
-            //            ValidateLifetime = true,
-            //            IssuerSigningKey = new SymmetricSecurityKey(key),
-            //            ValidateIssuerSigningKey = true
-            //        }, out SecurityToken validatedToken);
-            //    }
-            //    catch (Exception)
-            //    {
-            //        throw new Exception("Invalid or expired token");
-            //    }
-
-            //    // Reset password  
-            //    existingUser.Password = BCrypt.Net.BCrypt.HashPassword(pass);
-            //    await user.SaveChangesAsync();
-            if (pass != confirmpass)
-            {
-                throw new ArgumentException("Password and Confirm Password should be the same.");
-            }
-
-            // Fetch Reset Key from configuration
-            var resetKey = configuration["JwtConfig:ResetKey"];
-            if (string.IsNullOrEmpty(resetKey))
-            {
-                throw new InvalidOperationException("Reset key is not configured.");
-            }
+            
 
             var handler = new JwtSecurityTokenHandler();
             ClaimsPrincipal claimsPrincipal;
@@ -170,22 +129,16 @@ namespace BusinessLogicLayer.Services
             try
             {
                 // Validate token
-                var key = Encoding.ASCII.GetBytes(resetKey);
                 claimsPrincipal = handler.ValidateToken(token, new TokenValidationParameters
                 {
-                    //ValidateIssuer = false,
-                    //ValidateAudience = false,
-                    //ValidateLifetime = true,
-                    //IssuerSigningKey = new SymmetricSecurityKey(key),
-                    //ValidateIssuerSigningKey = true
                     ValidateIssuer = true,
-                    ValidIssuer = configuration["JwtConfig:Issuer"],
                     ValidateAudience = true,
-                    ValidAudience = configuration["JwtConfig:Audience"],
                     ValidateLifetime = true,
+                    ValidateIssuerSigningKey = true,
+                    ValidIssuer = configuration["JwtConfig:Issuer"],
+                    ValidAudience = configuration["JwtConfig:Audience"],
                     ClockSkew = TimeSpan.Zero,  // No grace period for expiration
-                    IssuerSigningKey = new SymmetricSecurityKey(key),
-                    ValidateIssuerSigningKey = true
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["JwtConfig:ResetKey"]))
                 }, out _);
             }
             catch (SecurityTokenException)
@@ -194,14 +147,14 @@ namespace BusinessLogicLayer.Services
             }
 
             // Extract email from claims
-            var email = claimsPrincipal.FindFirst(ClaimTypes.Email)?.Value;
-            if (string.IsNullOrEmpty(email))
+            var id = claimsPrincipal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (id == null)
             {
                 throw new Exception("Email not found in token.");
             }
 
-            // Fetch user by email
-            var existingUser = await user.Users.FirstOrDefaultAsync(u => u.Email == email);
+            // Fetch user by id
+            var existingUser = await user.Users.FirstOrDefaultAsync(u => u.ID == int.Parse(id));
             if (existingUser == null)
             {
                 throw new Exception("User not found.");

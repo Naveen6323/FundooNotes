@@ -20,13 +20,11 @@ namespace BusinessLogicLayer.Services
         {
             var smtpSettings = _configuration.GetSection("SmtpSettings");
             //var smtpPass = Environment.GetEnvironmentVariable("SMTP_PASS");
-
             using var client = new SmtpClient(smtpSettings["Host"], int.Parse(smtpSettings["Port"]))
             {
                 Credentials = new NetworkCredential(smtpSettings["Username"], smtpSettings["Password"]),
                 EnableSsl = bool.Parse(smtpSettings["EnableSsl"])
             };
-
             var mailMessage = new MailMessage
             {
                 From = new MailAddress(smtpSettings["Username"]),
@@ -34,7 +32,6 @@ namespace BusinessLogicLayer.Services
                 Body = body,
                 IsBodyHtml = true
             };
-
             mailMessage.To.Add(to);
             await client.SendMailAsync(mailMessage);
         }

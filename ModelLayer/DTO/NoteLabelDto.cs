@@ -6,8 +6,9 @@ using System.Threading.Tasks;
 
 namespace ModelLayer.DTO
 {
-    public class RegisterResponse
+    public class NoteLabelDto
     {
-        public string message { get; set; }
+        public int LabelId { get; set; }
+        public string labelname { get; set; }
     }
 }

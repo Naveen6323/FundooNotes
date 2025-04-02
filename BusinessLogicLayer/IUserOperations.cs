@@ -12,11 +12,19 @@ namespace BusinessLogicLayer
     public interface IUserOperations
     {
         List<User> GetAllUsers();
-        //Task AddNote(CreateNoteModel model, int id);
-        ////Task<List<GetAllNotesWithLabelResponse>> GetAllNotes(int userid);
-        //Task UpdateNoteById(int userid, int id, CreateNoteModel model);
-        //Task<CreateNoteModel> GetNoteById(int userid, int id);
-        //Task<string> DeleteNoteById(int userid, int id);
+        Task AddNote(CreateNoteModel model, int id);
+        Task<List<GetAllNotesWithLabelResponse>> GetAllNotes(int userid);
+        Task UpdateNoteById(int userid, int id, CreateNoteModel model);
+        Task<NotesWithLabelNameModel> GetNoteById(int userid, int id);
+        Task<string> DeleteNoteById(int userid, int id);
+        Task<string> ArchieveNotebyId(int userid, int id);
+        Task<List<UserNotes>> GetAllTrashedNotes(int userid);
+        Task<List<UserNotes>> GetAllArchievedNotes(int userid);
+        Task<string> AddColorToNote(int userid,int id,string color);
+        Task AddLabelToNote(int userid, int noteid, string label);
+        Task<string> DeleteLabelByID(int userid, int labelid);
+        Task DeleteLabelForNote(int userid, int noteid,string label);
+
 
 
 

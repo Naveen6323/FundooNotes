@@ -65,12 +65,18 @@ builder.Services.AddAuthentication(options =>
 
     };
 });
-builder.Services.AddControllers()
-    .AddJsonOptions(options =>
+builder.Services.AddControllers().AddJsonOptions(options =>
+{
+    options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
+    options.JsonSerializerOptions.WriteIndented = true;
+});
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", build =>
     {
-        options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
-        options.JsonSerializerOptions.WriteIndented = true;
+        build.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod();
     });
+});
 
 builder.Services.AddAuthorization();
 var app = builder.Build();
@@ -81,6 +87,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+app.UseCors("AllowAll");
 app.UseAuthentication();
 app.UseAuthorization();
 
